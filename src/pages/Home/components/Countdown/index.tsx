@@ -1,9 +1,14 @@
 import { useContext, useEffect } from "react";
 import { CountDownContainer, Separator } from "./styles";
 import { differenceInSeconds } from "date-fns";
-import { CyclesContext } from "../..";
+import { CyclesContext } from "../../../../context/CycleContext";
 
 export function Countdown() {
+  function playAlarm() {
+    const audio = new Audio("/bell-notification.mp3");
+    audio.play();
+    console.log("Executou");
+  }
   const {
     activeCycle,
     activeCycleId,
@@ -20,12 +25,13 @@ export function Countdown() {
       interval = setInterval(() => {
         const seccondsDifference = differenceInSeconds(
           new Date(),
-          activeCycle.startDate
+          new Date(activeCycle.startDate)
         );
         if (seccondsDifference >= totalSeconds) {
           markCurrentCycleAsFinished();
           setSeccondsPassed(totalSeconds);
           clearInterval(interval);
+          playAlarm();
         } else {
           setSeccondsPassed(seccondsDifference);
         }
@@ -34,7 +40,13 @@ export function Countdown() {
     return () => {
       clearInterval(interval);
     };
-  }, [activeCycle, totalSeconds, activeCycleId, markCurrentCycleAsFinished]);
+  }, [
+    activeCycle,
+    totalSeconds,
+    activeCycleId,
+    markCurrentCycleAsFinished,
+    setSeccondsPassed,
+  ]);
 
   const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0;
 
@@ -47,6 +59,8 @@ export function Countdown() {
   useEffect(() => {
     if (activeCycle) {
       document.title = `${minutes}: ${seconds}`;
+    } else {
+      document.title = "Ignite Timer";
     }
   }, [activeCycle, minutes, seconds]);
 

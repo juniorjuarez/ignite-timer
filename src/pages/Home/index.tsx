@@ -7,36 +7,14 @@ import {
   StartCountDownButton,
   StopCountDownButton,
 } from "./styles";
-import { createContext, useState } from "react";
-
 import { NewCycleForm } from "./components/NewCycleForm";
 import { Countdown } from "./components/Countdown";
-
-interface ICycle {
-  id: string;
-  task: string;
-  minutsAmount: number;
-  startDate: Date;
-  interruptedDate?: Date;
-  finishedDate?: Date;
-}
-
-interface ICyclesContextType {
-  activeCycle: ICycle | undefined;
-  activeCycleId: string | null;
-  amountSecondsPassed: number;
-  markCurrentCycleAsFinished: () => void;
-  setSeccondsPassed: (seconds: number) => void;
-}
-
-export const CyclesContext = createContext({} as ICyclesContextType);
+import { CyclesContext } from "../../context/CycleContext";
+import { useContext } from "react";
 
 export function Home() {
-  const [cycles, setCycles] = useState<ICycle[]>([]);
-  const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
-  const [amountSecondsPassed, setAmountSecondsPassed] = useState(0);
-
-  const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId);
+  const { activeCycle, createNewCycle, interruptedCycle } =
+    useContext(CyclesContext);
 
   const newCycleFormSchema = zod.object({
     task: zod.string().min(1, "informe a tarefa"),
@@ -57,73 +35,24 @@ export function Home() {
 
   const { handleSubmit, watch, reset } = newCycleForm;
 
-  function setSeccondsPassed(seconds: number) {
-    setAmountSecondsPassed(seconds);
-  }
-
-  function handleCreateNewSicly(data: TNewCycleFormData) {
-    const id = String(new Date().getTime());
-
-    const newCycle: ICycle = {
-      id,
-      task: data.task,
-      minutsAmount: data.minutsAmount,
-      startDate: new Date(),
-    };
-
-    setCycles((state) => [...state, newCycle]);
-    setActiveCycleId(newCycle.id);
+  function handleCreateNewyCycle(data: TNewCycleFormData) {
+    createNewCycle(data);
     reset();
-    setAmountSecondsPassed(0);
   }
 
-  function markCurrentCycleAsFinished() {
-    setCycles((state) =>
-      state.map((cycle) => {
-        if (cycle.id === activeCycleId) {
-          return { ...cycle, finishedDate: new Date() };
-        } else {
-          return cycle;
-        }
-      })
-    );
-  }
-
-  function handleInterruptedCycle() {
-    setCycles((state) =>
-      state.map((cycle) => {
-        if (cycle.id === activeCycleId) {
-          return { ...cycle, interruptedDate: new Date() };
-        } else {
-          return cycle;
-        }
-      })
-    );
-    setActiveCycleId(null);
-  }
   const task = watch("task");
   const isSubmitDisabled = !task;
 
   return (
     <HomerContainer>
-      <form action="" onSubmit={handleSubmit(handleCreateNewSicly)}>
-        <CyclesContext.Provider
-          value={{
-            activeCycle,
-            activeCycleId,
-            markCurrentCycleAsFinished,
-            amountSecondsPassed,
-            setSeccondsPassed,
-          }}
-        >
-          <FormProvider {...newCycleForm}>
-            <NewCycleForm />
-          </FormProvider>
-          <Countdown />
-        </CyclesContext.Provider>
+      <form action="" onSubmit={handleSubmit(handleCreateNewyCycle)}>
+        <FormProvider {...newCycleForm}>
+          <NewCycleForm />
+        </FormProvider>
+        <Countdown />
 
         {activeCycle ? (
-          <StopCountDownButton onClick={handleInterruptedCycle} type="button">
+          <StopCountDownButton onClick={interruptedCycle} type="button">
             <HandPalm size={24} /> Imterromper
           </StopCountDownButton>
         ) : (
